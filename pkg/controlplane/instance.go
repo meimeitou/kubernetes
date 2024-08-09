@@ -107,6 +107,10 @@ import (
 	storagerest "k8s.io/kubernetes/pkg/registry/storage/rest"
 )
 
+var (
+	BootstrapController *Controller
+)
+
 const (
 	// DefaultEndpointReconcilerInterval is the default amount of time for how often the endpoints for
 	// the kubernetes Service are reconciled.
@@ -537,6 +541,7 @@ func (m *Instance) InstallLegacyAPI(c *completedConfig, restOptionsGetter generi
 	if err != nil {
 		return fmt.Errorf("error creating bootstrap controller: %v", err)
 	}
+	BootstrapController = bootstrapController
 	m.GenericAPIServer.AddPostStartHookOrDie(controllerName, bootstrapController.PostStartHook)
 	m.GenericAPIServer.AddPreShutdownHookOrDie(controllerName, bootstrapController.PreShutdownHook)
 
