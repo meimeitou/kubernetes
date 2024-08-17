@@ -184,6 +184,22 @@ func NewNodeConnectionInfoGetter(nodes NodeGetter, config KubeletClientConfig) (
 	}, nil
 }
 
+func (k *NodeConnectionInfoGetter) ResetTransport(config KubeletClientConfig) error {
+	transport, err := MakeTransport(&config)
+	if err != nil {
+		return err
+	}
+	insecureSkipTLSVerifyTransport, err := MakeInsecureTransport(&config)
+	if err != nil {
+		return err
+	}
+
+	k.transport = transport
+	k.insecureSkipTLSVerifyTransport = insecureSkipTLSVerifyTransport
+
+	return nil
+}
+
 // GetConnectionInfo retrieves connection info from the status of a Node API object.
 func (k *NodeConnectionInfoGetter) GetConnectionInfo(ctx context.Context, nodeName types.NodeName) (*ConnectionInfo, error) {
 	node, err := k.nodes.Get(ctx, string(nodeName), metav1.GetOptions{})

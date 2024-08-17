@@ -40,6 +40,22 @@ import (
 	"sigs.k8s.io/structured-merge-diff/v4/fieldpath"
 )
 
+var (
+	GlobalConnectionInfoGetter client.ConnectionInfoGetter
+	GlobalKubeletClientConfig  client.KubeletClientConfig
+)
+
+func ResetConnectionInfoGetter() error {
+	if GlobalConnectionInfoGetter == nil {
+		return fmt.Errorf("GlobalConnectionInfoGetter is nil")
+	}
+	cf, ok := GlobalConnectionInfoGetter.(*client.NodeConnectionInfoGetter)
+	if !ok {
+		return fmt.Errorf("GlobalConnectionInfoGetter is not a NodeConnectionInfoGetter")
+	}
+	return cf.ResetTransport(GlobalKubeletClientConfig)
+}
+
 // NodeStorage includes storage for nodes and all sub resources.
 type NodeStorage struct {
 	Node   *REST
@@ -150,7 +166,8 @@ func NewStorage(optsGetter generic.RESTOptionsGetter, kubeletClientConfig client
 	}
 	nodeREST.connection = connectionInfoGetter
 	proxyREST.Connection = connectionInfoGetter
-
+	GlobalConnectionInfoGetter = connectionInfoGetter
+	GlobalKubeletClientConfig = kubeletClientConfig
 	return &NodeStorage{
 		Node:                  nodeREST,
 		Status:                statusREST,
