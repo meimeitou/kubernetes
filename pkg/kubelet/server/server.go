@@ -177,11 +177,15 @@ func RestartKubeletServer() error {
 				// should be called instead.
 				if err := s.ListenAndServeTLS(RestartParams.TlsOptions.CertFile, RestartParams.TlsOptions.KeyFile); err != nil {
 					klog.ErrorS(err, "Failed to listen and serve")
-					os.Exit(1)
+					if err != http.ErrServerClosed {
+						os.Exit(1)
+					}
 				}
 			} else if err := s.ListenAndServe(); err != nil {
 				klog.ErrorS(err, "Failed to listen and serve")
-				os.Exit(1)
+				if err != http.ErrServerClosed {
+					os.Exit(1)
+				}
 			}
 		}()
 		klog.InfoS("Kubelet server restarted")
@@ -226,11 +230,15 @@ func ListenAndServeKubeletServer(
 		// should be called instead.
 		if err := s.ListenAndServeTLS(tlsOptions.CertFile, tlsOptions.KeyFile); err != nil {
 			klog.ErrorS(err, "Failed to listen and serve")
-			os.Exit(1)
+			if err != http.ErrServerClosed {
+				os.Exit(1)
+			}
 		}
 	} else if err := s.ListenAndServe(); err != nil {
 		klog.ErrorS(err, "Failed to listen and serve")
-		os.Exit(1)
+		if err != http.ErrServerClosed {
+			os.Exit(1)
+		}
 	}
 }
 
