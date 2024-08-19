@@ -159,7 +159,7 @@ type NodeConnectionInfoGetter struct {
 
 // NewNodeConnectionInfoGetter creates a new NodeConnectionInfoGetter.
 func NewNodeConnectionInfoGetter(nodes NodeGetter, config KubeletClientConfig) (ConnectionInfoGetter, error) {
-	transport, err := MakeTransport(&config)
+	transport, err := MakeInsecureTransport(&config)
 	if err != nil {
 		return nil, err
 	}
