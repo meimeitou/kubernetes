@@ -185,7 +185,7 @@ func NewNodeConnectionInfoGetter(nodes NodeGetter, config KubeletClientConfig) (
 }
 
 func (k *NodeConnectionInfoGetter) ResetTransport(config KubeletClientConfig) error {
-	transport, err := MakeTransport(&config)
+	transport, err := MakeInsecureTransport(&config)
 	if err != nil {
 		return err
 	}

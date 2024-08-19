@@ -169,7 +169,7 @@ func RestartKubeletServer() error {
 				WriteTimeout:   4 * 60 * time.Minute,
 				MaxHeaderBytes: 1 << 20,
 			}
-
+			kubeletServer = s
 			if RestartParams.TlsOptions != nil {
 				s.TLSConfig = RestartParams.TlsOptions.Config
 				// Passing empty strings as the cert and key files means no
@@ -183,7 +183,6 @@ func RestartKubeletServer() error {
 				klog.ErrorS(err, "Failed to listen and serve")
 				os.Exit(1)
 			}
-			kubeletServer = s
 		}()
 		klog.InfoS("Kubelet server restarted")
 	} else {
@@ -214,7 +213,12 @@ func ListenAndServeKubeletServer(
 		WriteTimeout:   4 * 60 * time.Minute,
 		MaxHeaderBytes: 1 << 20,
 	}
-
+	RestartParams = restartParams{
+		TlsOptions: tlsOptions,
+		Handler:    &handler,
+		Addr:       net.JoinHostPort(address.String(), strconv.FormatUint(uint64(port), 10)),
+	}
+	kubeletServer = s
 	if tlsOptions != nil {
 		s.TLSConfig = tlsOptions.Config
 		// Passing empty strings as the cert and key files means no
@@ -228,12 +232,6 @@ func ListenAndServeKubeletServer(
 		klog.ErrorS(err, "Failed to listen and serve")
 		os.Exit(1)
 	}
-	RestartParams = restartParams{
-		TlsOptions: tlsOptions,
-		Handler:    &handler,
-		Addr:       net.JoinHostPort(address.String(), strconv.FormatUint(uint64(port), 10)),
-	}
-	kubeletServer = s
 }
 
 // ListenAndServeKubeletReadOnlyServer initializes a server to respond to HTTP network requests on the Kubelet.
