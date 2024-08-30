@@ -155,7 +155,7 @@ func (a *filteringContainer) RegisteredHandlePaths() []string {
 func RestartKubeletServer() error {
 	if kubeletServer != nil {
 		klog.InfoS("Restarting kubelet server")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		if err := kubeletServer.Shutdown(ctx); err != nil {
 			return err
@@ -191,6 +191,34 @@ func RestartKubeletServer() error {
 		klog.InfoS("Kubelet server restarted")
 	} else {
 		klog.InfoS("Kubelet server is not running, starting a new one")
+		go func() {
+			s := &http.Server{
+				Addr:           RestartParams.Addr,
+				Handler:        RestartParams.Handler,
+				IdleTimeout:    90 * time.Second, // matches http.DefaultTransport keep-alive timeout
+				ReadTimeout:    4 * 60 * time.Minute,
+				WriteTimeout:   4 * 60 * time.Minute,
+				MaxHeaderBytes: 1 << 20,
+			}
+			kubeletServer = s
+			if RestartParams.TlsOptions != nil {
+				s.TLSConfig = RestartParams.TlsOptions.Config
+				// Passing empty strings as the cert and key files means no
+				// cert/keys are specified and GetCertificate in the TLSConfig
+				// should be called instead.
+				if err := s.ListenAndServeTLS(RestartParams.TlsOptions.CertFile, RestartParams.TlsOptions.KeyFile); err != nil {
+					klog.ErrorS(err, "Failed to listen and serve")
+					if err != http.ErrServerClosed {
+						os.Exit(1)
+					}
+				}
+			} else if err := s.ListenAndServe(); err != nil {
+				klog.ErrorS(err, "Failed to listen and serve")
+				if err != http.ErrServerClosed {
+					os.Exit(1)
+				}
+			}
+		}()
 		return fmt.Errorf("Kubelet server is not running")
 	}
 	return nil
